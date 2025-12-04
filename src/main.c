@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "huffman.h"
+#include "search.h"
 
 // Ponto de entrada do programa
 int main(int argc, char *argv[]) {
@@ -28,7 +29,7 @@ int main(int argc, char *argv[]) {
     } 
 
     // Verifica o comando descompactar
-    else if (strcmp(argv[1], "descompactar") == 0) {
+    if (strcmp(argv[1], "descompactar") == 0) {
         if (argc < 4) {
             fprintf(stderr, "Uso: meu_programa descompactar <arquivo_compactado> <arquivo_destino>\n");
             return 1;
@@ -46,11 +47,25 @@ int main(int argc, char *argv[]) {
             return 1;
         }
     }
-    
-    else {
-        fprintf(stderr, "Comando desconhecido: %s\n", argv[1]);
-        return 1;
+
+    if(strcmp(argv[1], "buscar_compactado") == 0){
+        if(argc < 4){
+            fprintf(stderr, "Uso: meu_programa buscar_comprimido <arquivo_compactado> \"substring\" \n");
+            return 1;
+        }
+
+        const char *arquivo = argv[2];
+        const char *substring = argv[3];
+
+        printf("Buscando \"%s\" dentro do arquivo compactado \"%s\"...\n\n", substring, arquivo);
+
+        buscar_compactado(arquivo, substring);
+
+        return 0;
     }
 
-    return 0;
+    
+    fprintf(stderr, "Comando desconhecido: %s\n", argv[1]);
+    return 1;
+
 }

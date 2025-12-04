@@ -155,6 +155,8 @@ void compress_data_block(FILE *input, FILE *output, CodeEntry *code_table, long 
 
 // FUNCAO DE COMPRESSAO PRINCIPAL
 int compress_file(const char *input_path, const char *output_path) {
+
+    
     // CONTA AS FREQUENCIAS
     FILE *input = fopen(input_path, "rb");
     if (!input) { /* erro */ return 0; }
@@ -271,4 +273,45 @@ int decompress_file(const char *input_path, const char *output_path) {
     fclose(output);
     
     return 1;
+}
+
+size_t decompress_block(FILE *input, long offset, long size, HuffmanNode *root, uint8_t *out, size_t out_limit){
+    
+    fseek(input, offset, SEEK_SET);
+
+    uint8_t buffer_in[BUFFER_SIZE];
+    size_t bytes_read;
+    size_t out_count = 0;
+
+    HuffmanNode *current = root;
+
+    while ((bytes_read = fread(buffer_in, 1, size < BUFFER_SIZE ? size : BUFFER_SIZE, input)) > 0)
+    {
+        size -= bytes_read;
+
+        for(size_t i = 0; i <bytes_read; i++){
+
+            uint8_t byte = buffer_in[i];
+
+            for(int b = 0; b < 8; b++){
+                int bit = (byte >> (7-b)) & 1;
+                current = bit ? current->right : current->left;
+
+                if(current->left == NULL &&  current->right == NULL){
+                    if(out_count < out_limit){
+                        out[out_count++] = current->byte;
+                    }
+
+                    current = root;
+
+                    if(out_count == out_limit) return out_count;
+                }
+            }
+
+        }
+
+        if(size == 0) break;
+    }
+    
+    return out_count;
 }

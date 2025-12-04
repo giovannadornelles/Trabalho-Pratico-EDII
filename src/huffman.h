@@ -7,6 +7,7 @@
 
 //TAMANHO DO BUFFER FIXO PARA LER O ARQUIVO EM BLOCOS
 #define BUFFER_SIZE 8192
+#define BLOCK_SIZE 4096
 
 // Definição da estrutura do Nó da Árvore de Huffman
 typedef struct HuffmanNode {
@@ -35,5 +36,5 @@ void generate_huffman_codes(HuffmanNode *root, uint8_t *code, int top, CodeEntry
 void write_huffman_header(FILE *output, int *frequencies);
 void compress_data_block(FILE *input, FILE *output, CodeEntry *code_table, long file_size);
 void free_huffman_tree(HuffmanNode *root);
-
+size_t decompress_block(FILE *input, long offset, long size, HuffmanNode *root, uint8_t *out, size_t out_limit); 
 #endif
