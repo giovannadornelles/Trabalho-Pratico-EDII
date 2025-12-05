@@ -92,7 +92,7 @@ int* LPS_simple_build(const char *padrao) {
     //unico caractere nao tem prefixo e sufixo
     tabela[0] = 0;
 
-    //percorre o padrao ate o final, indice é a posicao atual no padrao e casamento o tamanho do maior prefixo que é sufixo
+    //percorre o padrao ate o final, indice é a posicao atual no padrao e o casamento é o tamanho do prefixo atual
     for (int indice = 1, casamento = 0; indice < tamanho; indice++) {
 
         //enquanto houver mismatch, reduzimos casamento, tentando reaproveitar os prefixos já confirmados
@@ -113,6 +113,7 @@ int* LPS_simple_build(const char *padrao) {
 
 void KMP_simple_search(const char *arquivo, const char *padrao) {
     //abre o arquivo para leitura binaria
+    //ponteiro para o fluxo do arquivo, "cursor"
     FILE *fluxo = fopen(arquivo, "rb");
     if (!fluxo) {
         perror("Erro");
@@ -149,47 +150,53 @@ void KMP_simple_search(const char *arquivo, const char *padrao) {
     size_t bytes_lidos;
     int deslocamento = 0; 
     
-    //leitura em blocos do arquivo
+    //le os dados do arquivo em blocos, guarda os dados lidos, tamanho de cada elemento 1 byte, le 4096 bytes , posicao atual do arquivo
+    //guarda quantos bytes conseguiu ler
     while ((bytes_lidos = fread(buffer + deslocamento, 1, TAMANHO_BLOCO, fluxo)) > 0) {
 
         // Total de bytes a serem processados no buffer
         size_t total_bytes = bytes_lidos + deslocamento; 
         
-        // Percorre o buffer atual
+        // Percorre o buffer ate o fim
         for (size_t indice_buffer = 0; indice_buffer < total_bytes; indice_buffer++) { 
 
-            // Algoritmo KMP no buffer
-            while (casamento > 0 && padrao[casamento] != buffer[indice_buffer])
+            // Algoritmo KMP
+            while (casamento > 0 && padrao[casamento] != buffer[indice_buffer]) 
                 casamento = tabelaLPS[casamento - 1];
             
             if (padrao[casamento] == buffer[indice_buffer])
                 casamento++;
             
-            // Padrão encontrado
+           
             if (casamento == tamanho_padrao) {
+                //calcula a posicao do padrao encontrado no arquivo
                 long long posicao_encontrada = posicao_arquivo + (long long)indice_buffer - tamanho_padrao + 1;
                 printf("%I64d\n", posicao_encontrada); //imprimir um número inteiro de 64 bits
-                casamento = tabelaLPS[casamento - 1];  
+                casamento = tabelaLPS[casamento - 1];  //procura mais ocorrencias
             }
         }
         
+
+
+        //verifica se chegou ao final do arquivo
         // Se não leu um bloco completo, chegou ao final
         if (bytes_lidos < TAMANHO_BLOCO)
             break;
         
         
         // Garante que padrões na fronteira não sejam perdidos
-        //copia os últimos (tamanho_padrao - 1) bytes para o início do buffer
+        //copia os últimos bytes para o início do buffer
         int tamanho_sobreposicao = tamanho_padrao - 1;
 
+        // Se o padrão for maior que o bloco lido, ajusta a sobreposição
         if (tamanho_sobreposicao > 0) {
-            memcpy(buffer, buffer + total_bytes - tamanho_sobreposicao, tamanho_sobreposicao);
+            memcpy(buffer, buffer + total_bytes - tamanho_sobreposicao, tamanho_sobreposicao); //inicio, de onde começa os ultimos e quantos copiar
 
             // Atualiza deslocamento e posição do arquivo
             deslocamento = tamanho_sobreposicao;
             posicao_arquivo += bytes_lidos - tamanho_sobreposicao;
         } else {
-            //caso o padrão seja de tamanho 0 ou 1
+            //caso o padrão vazio ou de 1 caractere, nao precisa de sobreposição
             deslocamento = 0;
             posicao_arquivo += bytes_lidos;
         }
