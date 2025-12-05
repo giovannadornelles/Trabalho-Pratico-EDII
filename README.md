@@ -72,4 +72,20 @@ Abra o terminal no diretório raiz do projeto e execute:
         ```    
 
 
+- Buscar em arquivo de texto (KMP)
+    - A função de busca simples utiliza o algoritmo KMP para encontrar todas as ocorrências de uma substring em um arquivo de texto grande. Ele imprime a posição de cada ocorrência encontrada.
+
+    - execute:
+
+       ```sh
+         ./programa.exe buscar_simples <arquivo_texto> "substring"
+        ```    
+
+    - IMPORTANTE* Se o arquivo de texto não estiver no mesmo diretório do projeto, é necessário adicionar o caminho do arquivo entre aspas:
+
+       ```sh
+        .\programa.exe buscar_simples "C:\caminho\ate\o\arquivo.txt" "minha_substring"
+        ```
+
+
 
