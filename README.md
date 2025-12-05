@@ -38,7 +38,7 @@ Abra o terminal no diretório raiz do projeto e execute:
     - execute:
 
        ```sh
-        ./meu_programa compactar <arquivo_original> <arquivo_compactado>
+        ./programa.exe compactar <arquivo_original> <arquivo_compactado>
         ```    
 
     - (O ARQUIVO DE DESTINO (compactado) NÃO PRECISA SER CRIADO ANTES DE RODAR O COMANDO, ELE SERÁ CRIADO APÓS EXECUTAR)
@@ -46,7 +46,7 @@ Abra o terminal no diretório raiz do projeto e execute:
     - IMPORTANTE* se o arquivo original não estiver nao mesmo diretório do projeto, é necessário adicionar o caminho do arquivo entre aspas:
 
        ```sh
-        .\meu_programa.exe compactar "C:\caminho\ate\o\arquivo.txt" teste1_compactado.huf
+        .\programa.exe compactar "C:\caminho\ate\o\arquivo.txt" teste1_compactado.huf
         ```    
         - (o arquivo compactado será gerado no diretório do projeto)
         
@@ -57,7 +57,7 @@ Abra o terminal no diretório raiz do projeto e execute:
     - execute:
 
        ```sh
-         ./meu_programa descompactar <arquivo_compactado> <arquivo_destino>
+         ./programa.exe descompactar <arquivo_compactado> <arquivo_destino>
         ```    
 
     - (O ARQUIVO DE DESTINO NÃO PRECISA SER CRIADO ANTES DE RODAR O COMANDO, ELE SERÁ CRIADO APÓS EXECUTAR)
@@ -68,7 +68,8 @@ Abra o terminal no diretório raiz do projeto e execute:
     - execute:
 
        ```sh
-         ./meu_programa buscar_compactado <arquivo_compactado> "substring"
+         ./programa.exe buscar_compactado <arquivo_compactado> "substring"
         ```    
+
 
 
