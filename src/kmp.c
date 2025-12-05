@@ -82,43 +82,57 @@ void KMP_compress_search(const char *text, int n, const char *pattern, int m, lo
 
 
 int* LPS_simple_build(const char *padrao) {
-    int tamanho = strlen(padrao);
+    //tamanho do padrao
+    int tamanho = strlen(padrao); 
+    //memoria para a tabela LPS
     int *tabela = malloc(tamanho * sizeof(int));
+    //unico caractere nao tem prefixo e sufixo
     tabela[0] = 0;
 
+    //percorre o padrao ate o final, indice é a posicao atual no padrao e casamento o tamanho do maior prefixo que é sufixo
     for (int indice = 1, casamento = 0; indice < tamanho; indice++) {
+
+        //enquanto houver mismatch, reduzimos casamento, tentando reaproveitar os prefixos já confirmados
         while (casamento > 0 && padrao[casamento] != padrao[indice])
             casamento = tabela[casamento - 1];
 
+        //se houve match do caractere atual, aumentamos o tamanho atual do prefixo
         if (padrao[casamento] == padrao[indice])
             casamento++;
 
+        //registramos o comprimento do maior prefixo válido
         tabela[indice] = casamento;
     }
 
     return tabela;
 }
 
+
 void KMP_simple_search(const char *arquivo, const char *padrao) {
+    //abre o arquivo para leitura binaria
     FILE *fluxo = fopen(arquivo, "rb");
     if (!fluxo) {
-        perror("Erro abrindo arquivo");
+        perror("Erro");
         return;
     }
 
     int tamanho_padrao = strlen(padrao);
     
-   
+   //caso digite um padrao muito grande
     if (tamanho_padrao > TAMANHO_MAXIMO_PADRAO) {
         fprintf(stderr, "Erro: padrão muito grande (máximo %d caracteres)\n", TAMANHO_MAXIMO_PADRAO);
         fclose(fluxo);
         return;
     }
     
+    //construção da tabela LPS, otimizar a busca
     int *tabelaLPS = LPS_simple_build(padrao);
     
     
+    //aloca buffer com espaço extra para sobreposição
     char *buffer = malloc(TAMANHO_BLOCO + tamanho_padrao - 1);
+
+    //caso falhe a alocação
     if (!buffer) {
         perror("Erro alocando buffer");
         free(tabelaLPS);
@@ -126,16 +140,22 @@ void KMP_simple_search(const char *arquivo, const char *padrao) {
         return;
     }
     
+    //inicializa variaveis de controle
     long long posicao_arquivo = 0;
     int casamento = 0;
     size_t bytes_lidos;
     int deslocamento = 0; 
     
+    //leitura em blocos do arquivo
     while ((bytes_lidos = fread(buffer + deslocamento, 1, TAMANHO_BLOCO, fluxo)) > 0) {
+
+        // Total de bytes a serem processados no buffer
         size_t total_bytes = bytes_lidos + deslocamento; 
         
-        for (size_t indice_buffer = 0; indice_buffer < total_bytes; indice_buffer++) {
-            // Algoritmo KMP 
+        // Percorre o buffer atual
+        for (size_t indice_buffer = 0; indice_buffer < total_bytes; indice_buffer++) { 
+
+            // Algoritmo KMP no buffer
             while (casamento > 0 && padrao[casamento] != buffer[indice_buffer])
                 casamento = tabelaLPS[casamento - 1];
             
@@ -156,12 +176,17 @@ void KMP_simple_search(const char *arquivo, const char *padrao) {
         
         
         // Garante que padrões na fronteira não sejam perdidos
+        //copia os últimos (tamanho_padrao - 1) bytes para o início do buffer
         int tamanho_sobreposicao = tamanho_padrao - 1;
+
         if (tamanho_sobreposicao > 0) {
             memcpy(buffer, buffer + total_bytes - tamanho_sobreposicao, tamanho_sobreposicao);
+
+            // Atualiza deslocamento e posição do arquivo
             deslocamento = tamanho_sobreposicao;
             posicao_arquivo += bytes_lidos - tamanho_sobreposicao;
         } else {
+            //caso o padrão seja de tamanho 0 ou 1
             deslocamento = 0;
             posicao_arquivo += bytes_lidos;
         }
