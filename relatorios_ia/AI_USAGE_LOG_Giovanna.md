@@ -1,4 +1,4 @@
-Relatório de Uso de Inteligência Artificial Generativa 
+Relatório de Uso de Inteligência Artificial Generativa - Giovanna
 
 Este documento registra todas as interações significativas com ferramentas de IA generativa (como Gemini, ChatGPT, Copilot, etc.) durante o desenvolvimento deste projeto. O objetivo é promover o uso ético e transparente da IA como ferramenta de apoio, e não como substituta para a compreensão dos conceitos fundamentais. 
 
