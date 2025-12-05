@@ -340,7 +340,7 @@ size_t decompress_block(FILE *input, long offset, long size, uint32_t bit_count,
     size_t bytes_read; // bytes lidos do arquivo compactado
     size_t out_count = 0; // quantidade de bytes já compactados
 
-    HuffmanNode *current = root; // começa da razi para decodificar os bits
+    HuffmanNode *current = root; // começa da raiz para decodificar os bits
 
     int bits_lidos = 0; // controla quantos bits já consumimos desse bloco
 
