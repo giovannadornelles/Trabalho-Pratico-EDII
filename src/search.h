@@ -15,12 +15,9 @@ typedef struct {
 
 // Estrutura responsável pelo armazenamento de informações do arquivo
 typedef struct {
-    uint32_t magic;        // endereço do bloco na memória (EX: 0xCAFEFECBA)
-    uint32_t version; 
     uint64_t index_offset; // posição onde começa a tabela de índices
     uint32_t num_blocks;   // quantidade de blocos criados
     uint32_t block_size;   // tamanho padrão descompactado
-
 } FileFooter;
 
 

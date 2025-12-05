@@ -125,8 +125,6 @@ void compress_data_block(FILE *input, FILE *output, CodeEntry *code_table, long 
 
     uint8_t buffer_in[BUFFER_SIZE];
     size_t bytes_read;
-    int bit_position = 0; 
-    uint8_t current_byte_out = 0; 
 
     uint64_t original_offset = 0;
 
@@ -181,8 +179,6 @@ void compress_data_block(FILE *input, FILE *output, CodeEntry *code_table, long 
     fwrite(index, sizeof(BlockIndexEntry), block_count, output);
 
     FileFooter footer = {
-        .magic = 0xBEEF2024,      // opcional só para validar arquivo
-        .version = 1,
         .index_offset = index_offset,
         .num_blocks = block_count,
         .block_size = BLOCK_SIZE
