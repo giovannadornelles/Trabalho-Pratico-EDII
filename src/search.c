@@ -28,8 +28,6 @@
 
         reportar a posição original no arquivo descomprimido
 */ 
-
-
 int buscar_compactado (const char *comp_filename, const char* pattern){
 
     FILE *f = fopen(comp_filename, "rb"); // read bynary (leitura em bytes)
@@ -47,25 +45,18 @@ int buscar_compactado (const char *comp_filename, const char* pattern){
     */
 
     FileFooter footer;
-    fseek(f, - (long)sizeof(FileFooter), SEEK_END); // pula até o final menos o tamanho do footer
+    fseek(f, - (long)sizeof(FileFooter), SEEK_END); // pula até o final subtraído ao tamanho do footer
     fread(&footer, sizeof(FileFooter), 1, f); // lê o footer
 
     fseek(f, footer.index_offset, SEEK_SET); // vai até o início do indíce
 
-    /*
-        O índice precisa dizer:
-            onde começa no arquivo comprimido
-            tamanho dele comprimido
-            tamanho original antes da compressão
-            posição original no arquivo descomprimido
-    */
 
     BlockIndexEntry *index = malloc(sizeof(BlockIndexEntry) * footer.num_blocks);
     fread(index, sizeof(BlockIndexEntry), footer.num_blocks, f);
 
     // PREPARANDO OS BUFFERS
     size_t max_uncompressed_block = footer.block_size;
-    char* block_raw = malloc(max_uncompressed_block); // onde o bloco comprimido será armazenado
+    char* block_raw = malloc(max_uncompressed_block); // onde os bytes do bloco comprimido será armazenado
     char *overlap = malloc(m > 1 ? m - 1 : 1); // armazena últimos bytes do bloco anterior
     size_t overlap_len = 0;
 
@@ -76,23 +67,25 @@ int buscar_compactado (const char *comp_filename, const char* pattern){
         [bloco2] ... "tida" -> "partida"
     */
 
-    fseek(f, 0, SEEK_SET);
+    fseek(f, 0, SEEK_SET); // Procura pelo cabeçalho do arquivo comprimido
+
     long original_size;
     int freq[256];
     
-    fread(&original_size, sizeof(long), 1, f);
-    fread(freq, sizeof(int), 256, f);
+    fread(&original_size, sizeof(long), 1, f); //tamanho original do texto
+    fread(freq, sizeof(int), 256, f); // tabela de frequências
 
-    HuffmanNode *root = build_huffman_tree(freq);
+    HuffmanNode *root = build_huffman_tree(freq); 
 
-
+    // Para cada bloco comprimido, descompacta e busca
     for(uint32_t bi = 0; bi < footer.num_blocks; bi++){
 
         BlockIndexEntry *e = &index[bi]; // pega o bloco comprimido
  
+        // descompacta apenas o bloco necessário
         size_t out_size = decompress_block(f, e->compressed_offset, e->compressed_size, e->bit_count, root, (uint8_t*)block_raw, e->uncompressed_size);        
         
-        // monta a área de busca com overlap
+        // Combina o bloco atual com o overlap para evitar perdas de combinação
         size_t combined_len = overlap_len + out_size;
         char *combined = malloc(combined_len);
 
@@ -100,7 +93,7 @@ int buscar_compactado (const char *comp_filename, const char* pattern){
         memcpy(combined, overlap, overlap_len);
         memcpy(combined + overlap_len, block_raw, out_size);
 
-        uint64_t global_start = e->original_offset - overlap_len;
+        uint64_t global_start = e->original_offset - overlap_len; // posição real no arquivo original
 
 
         // procura a string dentro de combined
@@ -109,8 +102,9 @@ int buscar_compactado (const char *comp_filename, const char* pattern){
         // fwrite(combined, 1, combined_len, stdout);
         // printf("\n------------------------------------------------\n");
 
-        KMP_compress_search(combined, combined_len, pattern, m, global_start);
+        KMP_compress_search(combined, combined_len, pattern, m, global_start); // roda o KMP no bloco
 
+        // atualiza o overlap com os último m-1 char
         if(m > 1){
             size_t new_overlap = (combined_len >= m - 1) ? (m - 1) : combined_len;
             memcpy(overlap, combined + combined_len - new_overlap, new_overlap);

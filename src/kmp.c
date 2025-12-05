@@ -19,13 +19,15 @@ void build_compress_LPS(const char *pattern, int m, int *lps) {
     // printf("index\tchar\tlps\n");
 
     for (int i = 1; i < m; i++) {
-        while (len > 0 && pattern[i] != pattern[len])
-            len = lps[len - 1];
 
-        if (pattern[i] == pattern[len])
-            len++;
+        // Enquanto houver mismatch, reduzimos len, tentando reaproveitar os prefixos já confirmados
+        while (len > 0 && pattern[i] != pattern[len]) len = lps[len - 1]; // recua para o maior prefixo conhecido
 
-        lps[i] = len;
+        // se houve match do caractere atual, aumentamos o tamanho atual do prefixo
+        if (pattern[i] == pattern[len]) len++; 
+
+        lps[i] = len; // registramos o comprimento do maior prefixo válido
+        
         // printf("%d\t%c\t%d\n", i, pattern[i], lps[i]);
     }
 
@@ -35,31 +37,43 @@ void build_compress_LPS(const char *pattern, int m, int *lps) {
 void KMP_compress_search(const char *text, int n, const char *pattern, int m, long long global_start) {
 
     int lps[m];
+
+    // LPS[J] indica o maior prefixo do padrão que também é sufixo até a posição j.
     build_compress_LPS(pattern, m, lps);
 
     // printf("\n[DEBUG] Iniciando KMP...\n");
     // printf("Scan: text vs pattern\n");
 
-    int i = 0; // índice do texto
+    int i = 0; // índice do texto descompactado
     int j = 0; // índice do padrão
 
     while (i < n) {
         // printf("Comparando texto[%d]='%c' com padrao[%d]='%c'\n", i, text[i], j, pattern[j]);
-
+        
+        // se os caracteres combinam, avança ambos
         if (text[i] == pattern[j]) {
             i++;
             j++;
-
+            
+            // Se j for igual tamanho de m, quer dizer que houve um match(todos os caracteres do padrão e do bloco combinam)
             if (j == m) {
+
+                // delay só para causar um drama
                 Sleep(300);
+
+                // global_start garante o offset real no arquivo completo, não apenas no bloco atual
                 printf("\n>>> \"%s\" encontrado. Offset global = %lld\n", pattern, global_start + i - m);
+
+                // Usamos LPS para continuar a busca aproveitando as comparações já válidas
                 j = lps[j - 1];
             }
         } else {
-            if (j > 0)
-                j = lps[j - 1];
-            else
-                i++;
+
+            // Se houve mismatch, mas já temos parte do padrão avançado
+            // Voltamos j para o maior prefixo possível usando o LPS
+            if (j > 0) j = lps[j - 1];
+            
+            else i++; // se não, só avançamos o texto
         }
     }
 

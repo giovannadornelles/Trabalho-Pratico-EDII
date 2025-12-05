@@ -123,47 +123,56 @@ void write_huffman_header(FILE *output, int *frequencies) {
 // COMPRIME OS DADOS BLOCO A BLOCO
 void compress_data_block(FILE *input, FILE *output, CodeEntry *code_table, long file_size) {
 
-    uint8_t buffer_in[BUFFER_SIZE];
+    uint8_t buffer_in[BUFFER_SIZE]; // Buffer temporário para ler pedaços do arquivo original
     size_t bytes_read;
 
-    uint64_t original_offset = 0;
+    uint64_t original_offset = 0; // posição inicial do bloco
 
+    //Reserva memória para no máximo 10000 blocos comprimidos. Valor de segurança para garantir que todos os blocos sejam comprimidos
     BlockIndexEntry* index = malloc(sizeof(BlockIndexEntry) * 10000);
     int block_count = 0;
 
-    // Loop que processa o arquivo em blocos (chunks)
+    // A cada bloco lido, monta uma linha do índice e atualiza a posição no arquivo original
+    // Lê os bytes do arquivo até encher o buffer e armazena na variável bytes_read
+    // Isso ocorre até o fim do arquivo, quando não há nenhum byte para ser lido e retorna 0
     while ((bytes_read = fread(buffer_in, 1, BUFFER_SIZE, input)) > 0) {
 
-        uint64_t comp_start = ftell(output);
-        int total_bits = 0;
+        uint64_t comp_start = ftell(output); //  marca onde esse bloco comprimido começa no .huff
+        int total_bits = 0; // soma de quantos bits foram usados para esse bloco, é o que vai parar em bit_count
 
-        int bitpos = 0;
-        uint8_t out = 0;
+        int bitpos = 0; // conta quantos bits já foram preenchidos em out
+        uint8_t out = 0; // Byte em montagem (será preenchido bit a bit)
 
         for (size_t i = 0; i < bytes_read; i++) {
 
+            // Contém, para cada byte, (0..255), a sequencia de bits do código de Huffman e o tamanho
             CodeEntry *entry = &code_table[buffer_in[i]];
 
             for (int b = 0; b < entry->size; b++) {
-
-                if(entry->code[b] == '1') out |= (1<<(7-bitpos));
-
                 
+                // Se o resultado for 1, colocamos 1 ao bit, se for 0, deixamos 0
+                // move o 1 para a direita a cada condição verdadeira. 10000000 -> 01000000...
+                if(entry->code[b] == '1') out |= ( 1 << ( 7 - bitpos)); 
+
                 bitpos++;
                 total_bits++;
 
+                // Quando 8 bits foram preenchidos, significa que 1 byte foi gerado
                 if(bitpos == 8){
-                    fwrite(&out, 1, 1, output);
+                    fwrite(&out, 1, 1, output); // escreve um byte comprimido no arquivo .huff
                     bitpos = 0;
                     out = 0;
                 }
             }
         }
 
+        // se não for possível gerar um byte, mas ainda tem bit armazenado, escreve em um bloco no arquivo comprimido
         if(bitpos > 0) fwrite(&out, 1, 1, output);
 
+        // usado para saber onde começou o bloco comprimido. Vai pro índice
         uint64_t comp_end = ftell(output);
-
+        
+        // armazena os dados do indíce na estrutura BlockIndexEntry
         index[block_count].original_offset = original_offset;
         index[block_count].compressed_offset = comp_start;
         index[block_count].uncompressed_size = bytes_read;
@@ -174,10 +183,13 @@ void compress_data_block(FILE *input, FILE *output, CodeEntry *code_table, long 
         block_count++;
     }
 
-    uint64_t index_offset = ftell(output);
 
+    uint64_t index_offset = ftell(output); // armazena a posição onde começam o índice
+
+    //Grava o índice inteiro
     fwrite(index, sizeof(BlockIndexEntry), block_count, output);
 
+    // Monta as informações do arquivo comprimido (quantos blocos, tamnho dos blocos e o índice para acessá-los)
     FileFooter footer = {
         .index_offset = index_offset,
         .num_blocks = block_count,
@@ -315,45 +327,55 @@ int decompress_file(const char *input_path, const char *output_path) {
 
 size_t decompress_block(FILE *input, long offset, long size, uint32_t bit_count, HuffmanNode *root, uint8_t *out, size_t out_limit){
     
-    fseek(input, offset, SEEK_SET);
+    fseek(input, offset, SEEK_SET); // vai direto para a posição onde o bloco começa
 
     uint8_t buffer_in[BUFFER_SIZE];
-    size_t bytes_read;
-    size_t out_count = 0;
+    size_t bytes_read; // bytes lidos do arquivo compactado
+    size_t out_count = 0; // quantidade de bytes já compactados
 
-    HuffmanNode *current = root;
+    HuffmanNode *current = root; // começa da razi para decodificar os bits
 
-    int bits_lidos = 0;
+    int bits_lidos = 0; // controla quantos bits já consumimos desse bloco
 
+    // Lê o bloco comprimido em partes, até consumir o tamanho de bytes 
     while ((bytes_read = fread(buffer_in, 1, size < BUFFER_SIZE ? size : BUFFER_SIZE, input)) > 0){
 
-        size -= bytes_read;
+        size -= bytes_read; // diminuimos o restante a ler
 
         for(size_t i = 0; i <bytes_read; i++){
 
             for(int b = 0; b < 8; b++){
 
+                // Para exatamente no último bit válido do bloco. Evita lixo caso o último byte esteja incompleto 
                 if(bits_lidos >= bit_count) return out_count;
-                
+
+                // Extrai 1 bit
                 int bit = (buffer_in[i] >> (7-b)) & 1;
+                
+                // Caminha na árvore de Huffman (0 esquerda, 1 direita)
                 current = bit ? current->right : current->left;
                 bits_lidos++;
-
+            
+                //Chegou em uma folha, achou o bit original
                 if(!current->left && !current->right){
+                    
+                    // Adiciona ao buffer de saída se couber
                     if(out_count < out_limit){
                         out[out_count++] = current->byte;
                     }
 
+                    // voltapara pra raiz para ler o próximo byte
                     current = root;
 
+                    //Se o bloco já atingiu o tamanho, para
                     if(out_count == out_limit) return out_count;
                 }
             }
 
         }
 
-        if(size == 0) break;
+        if(size == 0) break; // termina o bloco comprimido
     }
     
-    return out_count;
+    return out_count; // Retorna quantos bytes foram reconstruindos
 }
