@@ -105,11 +105,11 @@ int buscar_compactado (const char *comp_filename, const char* pattern){
 
         // procura a string dentro de combined
         printf("\n=== PROCESSANDO BLOCO %d ===\n", bi);
-        printf("\n[DEGUG] Texto descompactado no bloco\n", bi);
-        fwrite(combined, 1, combined_len, stdout);
-        printf("\n------------------------------------------------\n");
+        // printf("\n[DEGUG] Texto descompactado no bloco\n", bi);
+        // fwrite(combined, 1, combined_len, stdout);
+        // printf("\n------------------------------------------------\n");
 
-        KMP_search(combined, combined_len, pattern, m, global_start);
+        KMP_compress_search(combined, combined_len, pattern, m, global_start);
 
         if(m > 1){
             size_t new_overlap = (combined_len >= m - 1) ? (m - 1) : combined_len;
