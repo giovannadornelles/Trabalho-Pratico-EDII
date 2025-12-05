@@ -2,6 +2,7 @@
 #include <string.h>
 #include "huffman.h"
 #include "search.h"
+#include "kmp-simples.h"
 
 // Ponto de entrada do programa
 int main(int argc, char *argv[]) {
@@ -66,6 +67,20 @@ int main(int argc, char *argv[]) {
 
     
     fprintf(stderr, "Comando desconhecido: %s\n", argv[1]);
+    return 1;
+
+    if (argc < 4) {
+        printf("Uso:\n");
+        printf("  %s buscar_simples <arquivo> <substring>\n", argv[0]);
+        return 1;
+    }
+
+    if (strcmp(argv[1], "buscar_simples") == 0) {
+        kmp(argv[2], argv[3]);
+        return 0;
+    }
+
+    printf("Comando invalido.\n");
     return 1;
 
 }
