@@ -1,5 +1,6 @@
 #include "huffman.h"
 #include "min_heap.h"
+#include "search.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -121,36 +122,76 @@ void write_huffman_header(FILE *output, int *frequencies) {
 
 // COMPRIME OS DADOS BLOCO A BLOCO
 void compress_data_block(FILE *input, FILE *output, CodeEntry *code_table, long file_size) {
+
     uint8_t buffer_in[BUFFER_SIZE];
     size_t bytes_read;
     int bit_position = 0; 
     uint8_t current_byte_out = 0; 
 
+    uint64_t original_offset = 0;
+
+    BlockIndexEntry* index = malloc(sizeof(BlockIndexEntry) * 10000);
+    int block_count = 0;
+
     // Loop que processa o arquivo em blocos (chunks)
     while ((bytes_read = fread(buffer_in, 1, BUFFER_SIZE, input)) > 0) {
+
+        uint64_t comp_start = ftell(output);
+        int total_bits = 0;
+
+        int bitpos = 0;
+        uint8_t out = 0;
+
         for (size_t i = 0; i < bytes_read; i++) {
-            uint8_t byte_to_compress = buffer_in[i];
-            CodeEntry *entry = &code_table[byte_to_compress];
 
-            for (int j = 0; j < entry->size; j++) {
-                if (entry->code[j] == '1') {
-                    current_byte_out |= (1 << (7 - bit_position));
-                }
+            CodeEntry *entry = &code_table[buffer_in[i]];
+
+            for (int b = 0; b < entry->size; b++) {
+
+                if(entry->code[b] == '1') out |= (1<<(7-bitpos));
+
                 
-                bit_position++;
+                bitpos++;
+                total_bits++;
 
-                if (bit_position == 8) {
-                    fwrite(&current_byte_out, 1, 1, output);
-                    current_byte_out = 0; 
-                    bit_position = 0;
+                if(bitpos == 8){
+                    fwrite(&out, 1, 1, output);
+                    bitpos = 0;
+                    out = 0;
                 }
             }
         }
+
+        if(bitpos > 0) fwrite(&out, 1, 1, output);
+
+        uint64_t comp_end = ftell(output);
+
+        index[block_count].original_offset = original_offset;
+        index[block_count].compressed_offset = comp_start;
+        index[block_count].uncompressed_size = bytes_read;
+        index[block_count].compressed_size = comp_end - comp_start;
+        index[block_count].bit_count = total_bits;
+
+        original_offset += bytes_read;
+        block_count++;
     }
 
-    if (bit_position > 0) {
-        fwrite(&current_byte_out, 1, 1, output);
-    }
+    uint64_t index_offset = ftell(output);
+
+    fwrite(index, sizeof(BlockIndexEntry), block_count, output);
+
+    FileFooter footer = {
+        .magic = 0xBEEF2024,      // opcional só para validar arquivo
+        .version = 1,
+        .index_offset = index_offset,
+        .num_blocks = block_count,
+        .block_size = BLOCK_SIZE
+    };
+
+    fwrite(&footer, sizeof(FileFooter), 1, output);
+
+    free(index);
+
 }
 
 // FUNCAO DE COMPRESSAO PRINCIPAL
@@ -165,6 +206,7 @@ int compress_file(const char *input_path, const char *output_path) {
     uint8_t buffer[BUFFER_SIZE];
     size_t bytes_read;
     long file_size = 0;
+
 
     while ((bytes_read = fread(buffer, 1, BUFFER_SIZE, input)) > 0) {
         file_size += bytes_read;
@@ -275,7 +317,7 @@ int decompress_file(const char *input_path, const char *output_path) {
     return 1;
 }
 
-size_t decompress_block(FILE *input, long offset, long size, HuffmanNode *root, uint8_t *out, size_t out_limit){
+size_t decompress_block(FILE *input, long offset, long size, uint32_t bit_count, HuffmanNode *root, uint8_t *out, size_t out_limit){
     
     fseek(input, offset, SEEK_SET);
 
@@ -285,19 +327,23 @@ size_t decompress_block(FILE *input, long offset, long size, HuffmanNode *root, 
 
     HuffmanNode *current = root;
 
-    while ((bytes_read = fread(buffer_in, 1, size < BUFFER_SIZE ? size : BUFFER_SIZE, input)) > 0)
-    {
+    int bits_lidos = 0;
+
+    while ((bytes_read = fread(buffer_in, 1, size < BUFFER_SIZE ? size : BUFFER_SIZE, input)) > 0){
+
         size -= bytes_read;
 
         for(size_t i = 0; i <bytes_read; i++){
 
-            uint8_t byte = buffer_in[i];
-
             for(int b = 0; b < 8; b++){
-                int bit = (byte >> (7-b)) & 1;
-                current = bit ? current->right : current->left;
 
-                if(current->left == NULL &&  current->right == NULL){
+                if(bits_lidos >= bit_count) return out_count;
+                
+                int bit = (buffer_in[i] >> (7-b)) & 1;
+                current = bit ? current->right : current->left;
+                bits_lidos++;
+
+                if(!current->left && !current->right){
                     if(out_count < out_limit){
                         out[out_count++] = current->byte;
                     }

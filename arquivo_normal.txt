@@ -1,1 +1,1 @@
-banana maçã banan uva banan pera
+Olá meu nome é Peterson e eu tenho 20 anos, sou curitibano e faço faculdade na UFPR, como eu esqueci o que eu ia falar, então estou só preenchendo texto para ver como o arquivo se comporta para ver se o nome Peterson vai ser encontrado de novo

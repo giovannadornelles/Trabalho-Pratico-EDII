@@ -90,16 +90,8 @@ int buscar_compactado (const char *comp_filename, const char* pattern){
 
         BlockIndexEntry *e = &index[bi]; // pega o bloco comprimido
  
-        // fseek(f, e->compressed_offset, SEEK_SET); // move o cursor para a posição do bloco
-        // unsigned char *comp_buf = malloc(e->compressed_size); // armazena no buffer o tamanho do arquivo comprimido
-        // fread(comp_buf, 1, e->compressed_size, f); // le o bloco para a memória
+        size_t out_size = decompress_block(f, e->compressed_offset, e->compressed_size, e->bit_count, root, (uint8_t*)block_raw, e->uncompressed_size);        
         
-        // // size_t out_size = e->uncompressed_size; 
-        size_t out_size = decompress_block(f, e->compressed_offset, e->compressed_size, root, (uint8_t*)block_raw, e->uncompressed_size);
-        // descomprimir_bloco (comp_buff, e->com pressed_size, block_raw, &out_size)
-
-        // free(comp_buf); // libera o bloco da memória
-
         // monta a área de busca com overlap
         size_t combined_len = overlap_len + out_size;
         char *combined = malloc(combined_len);
@@ -118,16 +110,6 @@ int buscar_compactado (const char *comp_filename, const char* pattern){
         printf("\n------------------------------------------------\n");
 
         KMP_search(combined, combined_len, pattern, m, global_start);
-
-
-        // for(size_t i = 0; i + m <= combined_len; i++){
-
-        //     if(memcmp(combined + i, pattern, m) == 0){
-        //         uint64_t pos = global_start + i;
-        //         printf("%" PRIu64 "\n", pos);
-        //     }
-
-        // }
 
         if(m > 1){
             size_t new_overlap = (combined_len >= m - 1) ? (m - 1) : combined_len;

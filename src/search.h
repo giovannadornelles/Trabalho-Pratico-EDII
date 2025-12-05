@@ -10,6 +10,7 @@ typedef struct {
     uint64_t compressed_offset; // posição em bytes dentro do arquivo compactado onde começa o bloco
     uint64_t uncompressed_size; // tamanho em bytes do arquivo original
     uint64_t compressed_size;   // tamanho em bytes do arquivo compactado
+    uint32_t bit_count;         // quantidade exata de bits válidos no bloco comprimido
 } BlockIndexEntry; 
 
 // Estrutura responsável pelo armazenamento de informações do arquivo
