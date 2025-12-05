@@ -81,6 +81,9 @@ void KMP_compress_search(const char *text, int n, const char *pattern, int m, lo
 }
 
 
+
+/* --------------- busca simples ----------------- */
+
 int* LPS_simple_build(const char *padrao) {
     //tamanho do padrao
     int tamanho = strlen(padrao); 
@@ -165,7 +168,7 @@ void KMP_simple_search(const char *arquivo, const char *padrao) {
             // Padrão encontrado
             if (casamento == tamanho_padrao) {
                 long long posicao_encontrada = posicao_arquivo + (long long)indice_buffer - tamanho_padrao + 1;
-                printf("%I64d\n", posicao_encontrada);
+                printf("%I64d\n", posicao_encontrada); //imprimir um número inteiro de 64 bits
                 casamento = tabelaLPS[casamento - 1];  
             }
         }
