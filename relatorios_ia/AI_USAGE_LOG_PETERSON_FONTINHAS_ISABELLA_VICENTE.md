@@ -1,4 +1,4 @@
-# Relatório de Uso de Inteligencia Artificial - Peterson Fontinhas
+# Relatório de Uso de Inteligencia Artificial - Peterson Fontinhas e Isabella Vicente
 
 ### Registro de Interações
 
