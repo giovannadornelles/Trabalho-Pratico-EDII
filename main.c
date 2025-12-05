@@ -1,9 +1,8 @@
 #include <stdio.h>
 #include <string.h>
-#include "huffman.h"
-#include "search.h"
-#include "kmp-simples.h"
-
+#include "src/huffman.h"
+#include "src/search.h"
+#include "src/kmp.h"
 // Ponto de entrada do programa
 int main(int argc, char *argv[]) {
     // O programa requer pelo menos 4 argumentos: meu_programa, comando, arquivo_origem, arquivo_destino
@@ -58,10 +57,22 @@ int main(int argc, char *argv[]) {
         const char *arquivo = argv[2];
         const char *substring = argv[3];
 
-        printf("Buscando \"%s\" dentro do arquivo compactado \"%s\"...\n\n", substring, arquivo);
+        printf("\nBuscando \"%s\" dentro do arquivo compactado \"%s\"...\n\n", substring, arquivo);
 
         buscar_compactado(arquivo, substring);
 
+        return 0;
+    }
+
+    if (strcmp(argv[1], "buscar_simples") == 0) {
+
+        if (argc < 4) {
+            printf("Uso:\n");
+            printf("  %s buscar_simples <arquivo> <substring>\n", argv[0]);
+            return 1;
+        }
+    
+        KMP_simple_search(argv[2], argv[3]);
         return 0;
     }
 
@@ -76,7 +87,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (strcmp(argv[1], "buscar_simples") == 0) {
-        kmp(argv[2], argv[3]);
+        KMP_simple_search(argv[2], argv[3]);
         return 0;
     }
 
