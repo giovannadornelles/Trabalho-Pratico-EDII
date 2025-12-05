@@ -128,14 +128,21 @@ void compress_data_block(FILE *input, FILE *output, CodeEntry *code_table, long 
 
     uint64_t original_offset = 0; // posição inicial do bloco
 
-    //Reserva memória para no máximo 10000 blocos comprimidos. Valor de segurança para garantir que todos os blocos sejam comprimidos
-    BlockIndexEntry* index = malloc(sizeof(BlockIndexEntry) * 10000);
+    // memória dinâmica para o índice, começa com 1024 entradas e cresce quando necessário
+    size_t capacity = 1024; // começa com 1024 blocos
+    BlockIndexEntry* index = malloc(sizeof(BlockIndexEntry) * capacity);
     int block_count = 0;
 
     // A cada bloco lido, monta uma linha do índice e atualiza a posição no arquivo original
     // Lê os bytes do arquivo até encher o buffer e armazena na variável bytes_read
     // Isso ocorre até o fim do arquivo, quando não há nenhum byte para ser lido e retorna 0
     while ((bytes_read = fread(buffer_in, 1, BUFFER_SIZE, input)) > 0) {
+
+        // Se a capacidade de blocos encher, dobra o tamanho
+        if(block_count >= capacity){
+            capacity *= 2;
+            index = realloc(index, capacity * sizeof(BlockIndexEntry));
+        }
 
         uint64_t comp_start = ftell(output); //  marca onde esse bloco comprimido começa no .huff
         int total_bits = 0; // soma de quantos bits foram usados para esse bloco, é o que vai parar em bit_count
