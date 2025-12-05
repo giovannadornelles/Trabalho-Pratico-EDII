@@ -62,17 +62,6 @@ Abra o terminal no diretório raiz do projeto e execute:
 
     - (O ARQUIVO DE DESTINO NÃO PRECISA SER CRIADO ANTES DE RODAR O COMANDO, ELE SERÁ CRIADO APÓS EXECUTAR)
 
-- Descompactar
-    - A função descompactar lê o arquivo comprimido, reconstrói a árvore de Huffman e restaura o conteúdo original, salvando-o em um novo arquivo de texto.
-
-    - execute:
-
-       ```sh
-         ./meu_programa descompactar <arquivo_compactado> <arquivo_destino>
-        ```    
-
-    - (O ARQUIVO DE DESTINO NÃO PRECISA SER CRIADO ANTES DE RODAR O COMANDO, ELE SERÁ CRIADO APÓS EXECUTAR)
-
 - Buscar em arquivo compactado
     - A função de buscar em arquivo compactado, pega os blocos do arquivo compactado, desompacta o bloco e procura o padrão no bloco descompactado, se não houver match, passa para o próximo bloco até o fim do arquivo. Pode achar zero ou muitos matchs
 
@@ -81,4 +70,5 @@ Abra o terminal no diretório raiz do projeto e execute:
        ```sh
          ./meu_programa buscar_compactado <arquivo_compactado> "substring"
         ```    
+
 
